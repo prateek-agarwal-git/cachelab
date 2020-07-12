@@ -25,7 +25,6 @@ for (opt,val) in optlist:
 		verbose = 1
 numSets = 1<<setBits
 LRUCache = [[-1 for i in range(associativity)]for j in range(numSets)]
-LRUIndex = [0 for _ in range(numSets)]
 hitCount  = 0
 missCount = 0
 evictionCount = 0
@@ -52,40 +51,46 @@ for trace in file_handler:
 	setIndex = address & (numSets-1)
 	#print("setIndex=", setIndex)
 	address = address >> setBits
-	currIndex = LRUIndex[setIndex]
-	currLRUIndex = currIndex
-	c = 0
+	currIndex = 0 
 	emptySlot = 0
 	emptySlotIndex = 0
 	hitSuccess = 0
-	while c < associativity:
+	while currIndex < associativity:
 			storedAddress= LRUCache[setIndex][currIndex]
 			if storedAddress == -1 and emptySlot == 0:
 				# cache entry empty
 				emptySlot = 1
 				emptySlotIndex = currIndex
+				break
 			elif storedAddress == address:
 				#print("hit")
+				ind = associativity-1
+				while ind >0 and LRUCache[setIndex][ind] == -1:
+						ind-=1
+				hitIndex = currIndex
+				while hitIndex < ind:
+					LRUCache[setIndex][hitIndex] =	LRUCache[setIndex][hitIndex+1]
+					hitIndex+=1
+				LRUCache[setIndex][ind] = storedAddress
 				hitSuccess = 1
 				hitCount+=1
 				break
 			currIndex+=1
-			if currIndex == associativity:
-				currIndex = 0
-			c+=1
-	if c == associativity and emptySlot == 1 and hitSuccess == 0:
+	if emptySlot == 1 and hitSuccess == 0:
 		#print("empty slot and miss")
 		missCount+=1
 		LRUCache[setIndex][emptySlotIndex] = address
-	elif c == associativity and emptySlot == 0 and hitSuccess == 0:
+	elif emptySlot == 0 and hitSuccess == 0:
 			#cache miss	
 			#print("miss and eviction")
 			evictionCount+=1
 			missCount+=1
-			LRUCache[setIndex][currLRUIndex] = address
-			LRUIndex[setIndex]+=1
-			if LRUIndex[setIndex] == associativity:
-				LRUIndex[setIndex] = 0
+			ind = 0
+			while ind < associativity -1:
+				LRUCache[setIndex][ind]	= LRUCache[setIndex][ind+1]
+				ind+=1
+			LRUCache[setIndex][associativity-1] = address
+
 	if t == 'M':
 		hitCount+=1
 	#print(LRUCache)
