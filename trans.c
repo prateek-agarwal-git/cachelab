@@ -28,20 +28,124 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
   int temp,c;
 	int i,j,k,l;
 	int flag = 0;
-	if (M==64){
-		rowstep =8 ;
-		colstep =4 ;
-		for (i = 0 ;i<N; i += rowstep){
-			for (j = 0; j < M; j+=colstep){
-				for (k= i; k< i+rowstep;k++){
-						for (l = j; l < j+colstep; l++){
-								if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
-											if (flag == 0){
-											c = l;
-											flag = 1;
-											continue;
-												}
+	if (M!=32){
+				i = 0;
+				flag = 0;
+					
+				for (j = 0 ; j < 64; j+=colstep){
+					for (i = 0; i< 56; i+=rowstep){
+							for (k = i ; k < i+4; k++){
+								for (l  = j ; l < j+4; l++){
+									if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+											c= l; flag = 1;
+											continue;	
+									}					
+									temp =A[k][l];		
+									B[l][k] = temp;
 								}
+							if (flag == 1){
+								temp = A[k][c];
+								B[c][k] = temp;
+							}	
+							flag = 0;
+						}
+						for (k = i; k < i+4; k++){
+							for (l  = j+4 ; l < j+8; l++){
+								if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+											c= l; flag = 1;
+											continue;	
+								}					
+								temp =A[k][l];		
+								B[l-4][k+8] = temp;
+							}	
+							if (flag == 1){
+								temp = A[k][c];
+								B[c-4][k+8] = temp;
+							}	
+							flag = 0;
+						}
+
+						for (k = i+4 ; k < i+8; k++){
+							for (l  = j ; l < j+4; l++){
+								if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+										c= l; flag = 1;
+										continue;	
+								}					
+								temp =A[k][l];		
+								B[l][k] = temp;
+							}
+							if (flag == 1){
+								temp = A[k][c];
+								B[c][k] = temp;
+							}	
+							flag = 0;
+						}
+					for (k = i+4 ; k < i+8; k++){
+							for (l  = j+4 ; l < j+8;l++){
+								if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+										c= l; flag = 1;
+										continue;	
+								}					
+								temp =A[k][l];		
+								B[l-4][k+8] = temp;
+							}
+							if (flag == 1){
+								temp = A[k][c];
+								B[c-4][k+8] = temp;
+							}	
+							flag = 0;
+					}
+				for(k = j+4; k < j+ 8; k++){
+					for(l = i; l < i+ 8; l++){
+						temp = B[k-4][l+8];
+						B[k][l] = temp;
+					}
+				}
+			
+		}
+	}	
+	
+			for (j = 0; j < 64; j+=8){
+		for (i =56 ; i < 64; i+=8){
+					if ((i==j) && i <56) continue;
+				for (k = i ; k < i+4; k++){
+					for (l  = j ; l < j+4; l++){
+						if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+										c= l; flag = 1;
+										continue;	
+							}					
+						temp =A[k][l];		
+					B[l][k] = temp;
+			}
+						if (flag == 1){
+							temp = A[k][c];
+						B[c][k] = temp;
+			}	
+		flag = 0;
+		}
+					
+
+					for (k = i+4 ; k < i+8; k++){
+							for (l  = j ; l < j+4; l++){
+								if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+										c= l; flag = 1;
+									continue;	
+								}					
+								temp =A[k][l];		
+								B[l][k] = temp;
+						}
+					if (flag == 1){
+							temp = A[k][c];
+								B[c][k] = temp;
+						}	
+					flag = 0;
+					}
+				for (k = i+4 ; k < i+8; k++){
+							for (l  = j+4 ; l < j+8;l++){
+							if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+										c= l; flag = 1;
+										continue;	
+								}					
 								temp =A[k][l];		
 								B[l][k] = temp;
 							}
@@ -51,10 +155,26 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 						}	
 						flag = 0;
 					}
-			}		
+			for (k = i; k < i+4; k++){
+								for (l  = j+4 ; l < j+8; l++){
+									if ((((k<<3) + (l>>3))&0x1f)==(((l<<3)+ (k>>3))&0x1f)){
+											c= l; flag = 1;
+											continue;	
+									}					
+									temp =A[k][l];		
+									B[l][k] = temp;
+								}	
+							if (flag == 1){
+								temp = A[k][c];
+								B[c][k] = temp;
+							}
+							flag = 0;
+						}
+			}
+		}
 	}
-}
-	else{
+
+	else if (M==32){
 			 rowstep =8;
 			colstep = 8;
 		for (i = 0 ;i<N; i += rowstep){
